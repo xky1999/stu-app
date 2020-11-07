@@ -1,0 +1,26 @@
+
+.studentProduct .el-input{
+   margin:  20px 0;
+    width: 180px;
+    float: left;
+    /* line-height: 40px !important; */
+}
+
+.studentProduct{
+    line-height: normal;
+}
+ .studentProduct .searchBtn, .studentProduct .addProjectBtn{
+     float: left;
+   margin:  20px 10px;
+
+ }
+
+
+ .welcome{
+  line-height: normal;
+
+ }
+ 
+.studentProduct .el-table .cell{
+  display: flex;
+}

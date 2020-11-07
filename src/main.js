@@ -4,8 +4,8 @@ import router from "./router";
 import store from "./store";
 import  "@/assets/styles/base.css"
 import  "@/assets/styles/el-reset.css"
-
-
+import bus from "./utils/bus"
+Vue.prototype.$bus=bus
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 
@@ -21,6 +21,11 @@ import 'nprogress/nprogress.css'
 
 Vue.use(qfSubMenu)
 
+Vue.directive('haspermission',{
+  bind(el,binding,VNode){
+    console.log(el);
+  }
+})
 
 //路由前置钩子（导航守卫）
 router.beforeEach((to,from,next)=>{

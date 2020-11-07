@@ -27,3 +27,6 @@ html,body,#app,.home,.el-container{
 .el-menu-item-group .el-menu-item-group__title{
     padding:0
 }
+.el-main {
+    background-color: #fff!important;
+}

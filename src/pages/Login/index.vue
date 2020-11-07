@@ -5,7 +5,7 @@
       <h1>后台管理系统</h1>
       <el-form
         :model="loginForm"
-        status-icon
+
         :rules="rules"
         ref="loginForm"
         label-width="100px"
@@ -25,7 +25,15 @@
             autocomplete="off"
           ></el-input>
         </el-form-item>
-
+        <el-form-item label="验证码" prop="captcha">
+          <el-input
+            type="text"
+             class="captcha"
+            v-model="loginForm.captcha"
+            autocomplete="off"
+          ></el-input>
+          <span class="captcha-img" @click="set_captcha()" v-html="captchaSvg"></span>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="submitForm('loginForm')"
             >提交</el-button
@@ -38,7 +46,7 @@
       <!-- http://chst.vip:8081/stu2/media/bg_video.d2d602a9.mp4 -->
       <video
         muted="muted"
-        src="http://chst.vip:8081/stu2/media/bg_video.d2d602a9.mp4"
+        src="../../assets/imgs/bg_video.d2d602a9.mp4"
         autoplay="autoplay"
         loop="loop"
         preload="auto"
@@ -49,6 +57,29 @@
 </template>
 
 <style>
+.captcha-img{
+  background-color: #fff;
+  height: 44px;
+  width: 135px;
+  cursor: pointer;
+}
+.captcha .el-input__inner{
+  width: 100px!important;
+  position: absolute;
+  left: 0;
+  top: -22px;
+  z-index: 12;
+}
+.captcha{
+  width: 100px;
+  float: left;
+  margin-top: 22px;
+}
+.captcha-img{
+  position: absolute;
+  right: 50px;
+  top: 0;
+}
 #app {
   overflow: hidden;
   height: 100%;
@@ -120,7 +151,13 @@
 </style>
 
 <script>
-import { login } from "@/api";
+//登录逻辑的实现：
+// 1 手机用户输入的 username和password传递给后端
+// 2 登录通过后 将后端返回的token存到本地 跳转到主页
+// 3 每次请求后 携带token到authorization
+// 4 展示token正确的效验数据
+// 5 校验不通过 跳转到登录页
+import { login,getCaptcha,refreshCaptcha,verifyCaptcha } from "@/api";
 import {mapMutations} from "vuex"
 export default {
   data() {
@@ -140,22 +177,56 @@ export default {
         callback();
       }
     };
+    // 校验验证码
+    var validateCaptcha = (rule, value, callback) => {
+      if (!value||value.length!==5) {
+        callback("请输入验证码");
+      } else {
+        callback();
+      }
+    };
     return {
+      captchaSvg:"",//从服务器获取下来的svg结构
       loginForm: {
         UserName: "",
-        Pass: ""
+        Pass: "",
+        captcha:"11111"
       },
       rules: {
         UserName: [{ validator: ruleUserName, trigger: "blur" }],
-        Pass: [{ validator: validatePass, trigger: "blur" }]
+        Pass: [{ validator: validatePass, trigger: "blur" }],
+        captcha: [{ validator: validateCaptcha, trigger: "blur" }]
       }
     };
   },
+  mounted () {
+    this.set_captcha()
+  },
   methods: {
+    //封装一个方法用来获取二维码
+    set_captcha(){
+      getCaptcha()
+      .then(res=>{
+        // console.log(res);
+        this.captchaSvg=res.data.img; 
+      })
+    },
     ...mapMutations(['SET_USERINFO']),
     submitForm(formName) {
-      this.$refs[formName].validate(valid => {
+      this.$refs[formName].validate(async valid => {
         if (valid) {
+          //验证验证码正确在发送请求
+        //  let verifyRes= await verifyCaptcha(this.loginForm.captcha)
+        //  console.log(verifyRes);
+
+        //  if(!verifyRes.data.state){
+        //    //验证码不正确
+           
+        //        this.$message.error("验证码输入错误");
+             
+        //       return
+        //  }
+      
           const loading = this.$loading({
             lock: true,
             text: "正在登陆...",
@@ -163,21 +234,23 @@ export default {
             background: "rgba(0, 0, 0, 0.7)"
           });
           // //发送登入请求
-          // console.log(this.loginForm.UserName);
-          // console.log( this.loginForm.Pass);
+    
           login(this.loginForm.UserName, this.loginForm.Pass)
             .then(res => {
             
               loading.close()
-              if (res.data.state) {
+              if (res.data&&res.data.state) {
                 //用户名和密码正确
+                //权限按钮 保存在vuex中
                 this.$message.success("登陆成功")
-                // console.log(res.data.userInfo);
+                this.$store.commit("SET_PERMISSION_BUTTONS",res.data.permission.buttons)
                 localStorage.setItem("qf2005-token", res.data.token);
+                localStorage.setItem("qf2005-permission-buttons",JSON.stringify(res.data.permission.buttons));
                 localStorage.setItem("qf2005-userInfo", JSON.stringify(res.data.userInfo));
                 //更改vuex中state['userinfo']的值
                 this.SET_USERINFO(res.data.userInfo)
                 this.$router.push("/Welcome");
+                console.log(111);
               } else {
                 //用户名和密码错误
               loading.close()
@@ -185,11 +258,11 @@ export default {
               }
             })
             .catch(err => {
-              console.log(err);
+              // console.log(err);
             });
           
         } else {
-          console.log("error submit!!");
+          // console.log("error submit!!");
           return false;
         }
       });
